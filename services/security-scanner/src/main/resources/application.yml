@@ -1,0 +1,25 @@
+server:
+  port: ${SCANNER_PORT:8080}
+
+spring:
+  datasource:
+    url: ${SCANNER_DATABASE_URL:jdbc:postgresql://localhost:5432/vibeguard}
+    username: ${SCANNER_DATABASE_USERNAME:postgres}
+    password: ${SCANNER_DATABASE_PASSWORD:postgrespassword}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  kafka:
+    bootstrap-servers: ${SCANNER_KAFKA_BROKERS:localhost:9092}
+    consumer:
+      group-id: security-scanner-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer

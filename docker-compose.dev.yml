@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  # Overrides for database or broker parameters during development
+  postgres:
+    environment:
+      - POSTGRES_DB=vibeguard_dev
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  kafka:
+    ports:
+      - "9092:9092"

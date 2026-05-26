@@ -1,0 +1,16 @@
+{
+  "name": "vibeguard-monorepo",
+  "version": "1.0.0",
+  "description": "VibeGuard - Security & context platform for AI assisted development",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter \"*\" --parallel dev",
+    "build": "pnpm --filter \"*\" build",
+    "test": "pnpm --filter \"*\" test",
+    "lint": "pnpm --filter \"*\" lint",
+    "format": "prettier --write \"**/*.{js,ts,tsx,json,md}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5"
+  }
+}
