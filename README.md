@@ -146,10 +146,12 @@ pnpm dev
 ```
 
 ### Running Tests
-- Run all NestJS unit tests: `pnpm test`
-- Run context-service tests only: `pnpm --filter context-service test`
-- Run java security-scanner tests: `cd services/security-scanner && mvn test`
-- Run E2E integration tests: `pnpm --filter e2e test`
+- **Run the full regression test suite (Java + monorepo):** `pnpm test:regression` (or `pnpm test:regression --e2e` to include live E2E integration tests)
+- **Run all offline unit, integration, and component tests:** `pnpm test` (excludes E2E tests)
+- **Run frontend component tests only:** `pnpm --filter frontend test`
+- **Run context-service tests only:** `pnpm --filter context-service test`
+- **Run java security-scanner tests only:** `mvn test -f services/security-scanner/pom.xml`
+- **Run E2E integration tests only (requires active services):** `pnpm --filter e2e test`
 
 ### Running with Docker Compose (Production Build)
 To compile and spin up the complete containerized application stack (including database, brokers, API Gateway, Next.js frontend, and all backend microservices):
