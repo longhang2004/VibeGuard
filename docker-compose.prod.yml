@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    environment:
+      - NODE_ENV=production
+
+  context-service:
+    ports: []
+    environment:
+      - NODE_ENV=production
+
+  security-scanner:
+    ports: []
+    environment:
+      - NODE_ENV=production
+
+  analytics-service:
+    ports: []
+    environment:
+      - NODE_ENV=production
+
+  notification-service:
+    ports: []
+    environment:
+      - NODE_ENV=production
+
+  frontend:
+    environment:
+      - NODE_ENV=production

@@ -43,16 +43,39 @@ describe('VibeGuard E2E Happy Path Flow', () => {
     accessToken = res.data.data.accessToken;
   });
 
-  // 3. Create a context template (proxied to context-service)
-  it('should create a custom context template', async () => {
+  let generatedContent = '';
+
+  // 3. Generate a context template (proxied to context-service)
+  it('should generate a context template', async () => {
+    const res = await axios.post(
+      `${GATEWAY_URL}/api/context/templates/generate`,
+      {
+        projectName: 'E2E NestJS Project',
+        projectType: 'NESTJS_MONOLITH',
+        techStack: ['NestJS', 'PostgreSQL', 'TypeScript'],
+      },
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
+
+    expect(res.status).toBe(200);
+    expect(res.data.success).toBe(true);
+    expect(res.data.data.content).toBeDefined();
+    expect(res.data.data.content).toContain('# E2E NestJS Project');
+    generatedContent = res.data.data.content;
+  });
+
+  // 4. Save the template (proxied to context-service)
+  it('should save the generated template', async () => {
     const res = await axios.post(
       `${GATEWAY_URL}/api/context/templates`,
       {
-        name: 'E2E NestJS Standard',
-        description: 'E2E test template for guidelines',
+        name: 'E2E NestJS Project CLAUDE.md',
+        description: 'Context standard guidelines for project E2E NestJS Project',
         projectType: 'NESTJS_MONOLITH',
         techStack: ['NestJS', 'PostgreSQL', 'TypeScript'],
-        content: '# NestJS E2E Conventions\n- Use strict typing\n- Inject services',
+        content: generatedContent,
         isPublic: true,
       },
       {
@@ -66,7 +89,7 @@ describe('VibeGuard E2E Happy Path Flow', () => {
     templateId = res.data.data.id;
   });
 
-  // 4. Star the template (proxied to context-service)
+  // 5. Star the template (proxied to context-service)
   it('should star the template and verify success', async () => {
     const res = await axios.post(
       `${GATEWAY_URL}/api/context/templates/${templateId}/star`,
@@ -80,7 +103,7 @@ describe('VibeGuard E2E Happy Path Flow', () => {
     expect(res.data.success).toBe(true);
   });
 
-  // 5. Submit code for security scanning (proxied to security-scanner)
+  // 6. Submit code for security scanning (proxied to security-scanner)
   it('should submit code for static scan and receive a scan job ID', async () => {
     const res = await axios.post(
       `${GATEWAY_URL}/api/scanner/scan`,
@@ -100,7 +123,7 @@ describe('VibeGuard E2E Happy Path Flow', () => {
     scanId = res.data.data.scanId;
   });
 
-  // 6. Poll for scanner results (wait for scan status = COMPLETED)
+  // 7. Poll for scanner results (wait for scan status = COMPLETED)
   it('should poll scan status until completed and inspect security score & findings', async () => {
     let scanCompleted = false;
     let attempts = 0;
@@ -135,7 +158,7 @@ describe('VibeGuard E2E Happy Path Flow', () => {
     expect(scanCompleted).toBe(true);
   });
 
-  // 7. Verify security scan triggers notification creation
+  // 8. Verify security scan triggers notification creation
   it('should verify notifications are pushed for security vulnerabilities', async () => {
     const res = await axios.get(
       `${GATEWAY_URL}/api/notifications`,
@@ -150,7 +173,7 @@ describe('VibeGuard E2E Happy Path Flow', () => {
     expect(res.data.data[0].type).toBe('ALERT'); // Hardcoded password triggers ALERT type
   });
 
-  // 8. Fetch analytics scans summary
+  // 9. Fetch analytics scans summary
   it('should fetch aggregated scan analytics', async () => {
     const res = await axios.get(
       `${GATEWAY_URL}/api/analytics/scans/summary`,

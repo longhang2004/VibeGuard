@@ -94,6 +94,7 @@ services:
     container_name: vibeguard-api-gateway
     ports:
       - "3000:3000"
+    mem_limit: 512m
     environment:
       - PORT=3000
       - GATEWAY_PORT=3000
@@ -124,6 +125,7 @@ services:
     container_name: vibeguard-context-service
     ports:
       - "3001:3001"
+    mem_limit: 512m
     environment:
       - CONTEXT_PORT=3001
       - CONTEXT_DATABASE_URL=postgres://postgres:postgrespassword@postgres:5432/vibeguard
@@ -148,6 +150,7 @@ services:
     container_name: vibeguard-security-scanner
     ports:
       - "8080:8080"
+    mem_limit: 1024m
     environment:
       - SCANNER_PORT=8080
       - SCANNER_DATABASE_URL=jdbc:postgresql://postgres:5432/vibeguard
@@ -170,6 +173,7 @@ services:
     container_name: vibeguard-analytics-service
     ports:
       - "3002:3002"
+    mem_limit: 512m
     environment:
       - ANALYTICS_PORT=3002
       - ANALYTICS_DATABASE_URL=postgres://postgres:postgrespassword@postgres:5432/vibeguard
@@ -190,6 +194,7 @@ services:
     container_name: vibeguard-notification-service
     ports:
       - "3003:3003"
+    mem_limit: 512m
     environment:
       - NOTIFICATION_PORT=3003
       - NOTIFICATION_DATABASE_URL=postgres://postgres:postgrespassword@postgres:5432/vibeguard
@@ -210,6 +215,7 @@ services:
     container_name: vibeguard-frontend
     ports:
       - "4000:4000"
+    mem_limit: 512m
     environment:
       - FRONTEND_PORT=4000
       - NEXT_PUBLIC_API_URL=http://localhost:3000

@@ -105,3 +105,21 @@ To prevent the "blank slate" problem, maintain state across agent sessions:
 1. **Architectural Decisions:** Read and update [.agent/memory/decisions.md](file:///Users/longhang/personal_repos/VibeGuard/.agent/memory/decisions.md) whenever a major structural change is proposed or finalized.
 2. **Session Observations:** At the end of your run, append a structured JSON line describing the session's action to [.agent/memory/session-log.jsonl](file:///Users/longhang/personal_repos/VibeGuard/.agent/memory/session-log.jsonl).
    - Format: `{"timestamp": "ISO", "phase": 0, "action": "Scaffold monorepo", "status": "completed", "filesModified": [...]}`
+
+---
+
+## Known Limitations & Technical Debt
+
+1. **Kafka Integration Testing**: The tests for NestJS microservices and consumers currently use mock-based structures rather than Testcontainers. Integrating `@testcontainers/kafka` would improve integration test coverage.
+2. **Java Scanner Rule Engine AST**: The static code scanner uses compiled regular expression patterns. While high-performance, it does not build a full AST parse tree (e.g. using ANTLR or Spoon), which could lead to false positives on complex formatting.
+3. **Zustand Persistence Isolation**: Zustand stores credentials in localStorage. In a multi-tenant production environment, httpOnly cookies would be preferred for token storage.
+
+---
+
+## Changelog of Architectural Decisions
+
+- **2026-05-26**: *Initialized Monorepo & Scaffolding*. Defined package structures (`pnpm-workspace.yaml`), Docker network (`vibeguard-net`), and ports layout.
+- **2026-05-26**: *Auth & Gateway Implementation*. Configured Winston JSON logger, Redis throttlers, and custom Axios API client with automatic token refreshing.
+- **2026-05-27**: *Microservices & Kafka Integration*. Implemented Java Spring Boot rule engine, NestJS notification feeds, and TimescaleDB event ingestion.
+- **2026-05-27**: *Dynamic Routing Rewrite*. Injected `/api` prefixer in frontend interceptors and dynamic pathRewrite in gateway `ProxyMiddleware` to match downstream controller endpoints.
+- **2026-05-27**: *Next.js Standalone Containerization*. Configured `output: 'standalone'` in `next.config.ts` and re-architected Dockerfile build/run sequence.
