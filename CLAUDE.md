@@ -27,6 +27,7 @@
 - **Run NestJS unit tests:** `pnpm test`
 - **Run Spring Boot JUnit tests:** `mvn -f services/security-scanner/pom.xml test`
 - **Run E2E integration tests:** `pnpm --filter e2e test`
+- **Run regression test suite:** `pnpm test:regression` (or `pnpm test:regression --e2e` to include live E2E)
 - **Build all Docker containers:** `docker compose build`
 - **Spin up production Docker stack:** `docker compose up -d`
 
@@ -123,3 +124,4 @@ To prevent the "blank slate" problem, maintain state across agent sessions:
 - **2026-05-27**: *Microservices & Kafka Integration*. Implemented Java Spring Boot rule engine, NestJS notification feeds, and TimescaleDB event ingestion.
 - **2026-05-27**: *Dynamic Routing Rewrite*. Injected `/api` prefixer in frontend interceptors and dynamic pathRewrite in gateway `ProxyMiddleware` to match downstream controller endpoints.
 - **2026-05-27**: *Next.js Standalone Containerization*. Configured `output: 'standalone'` in `next.config.ts` and re-architected Dockerfile build/run sequence.
+- **2026-05-27**: *Test Suite Refactoring*. Added Supertest HTTP integration tests in gateway, MockMvc in Spring Boot scanner controller, React Testing Library suite for the frontend gauge, and a unified `run-regression-suite.sh` runner script.

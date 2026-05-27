@@ -37,3 +37,12 @@ This file tracks important design decisions, dependencies, and architectural pat
   2. Created `.agent/skills/` playbooks for quick tool alignment.
   3. Configured `codegraph` for symbol indexing.
   4. Established `scripts/rtk-compress.sh` to shrink command line tokens.
+
+## ADR 05: Monorepo Testing Layers & JVM Workarounds
+- **Date:** 2026-05-27
+- **Status:** Approved
+- **Decisions:**
+  1. **Gateway HTTP integration tests:** Mocked DB/Redis and tested routing via `supertest`. Resolved Jest v30 incompatibility in NestJS by pinning NestJS services to Jest v29.
+  2. **Java Scanner integration tests:** Implemented `ScanControllerIntegrationTest` using `@SpringBootTest` and `@AutoConfigureMockMvc`. Resolved Java 26 compatibility issues with Byte Buddy/Mockito by configuring Maven Surefire to run with `-Dnet.bytebuddy.experimental=true`.
+  3. **React component tests:** Extracted the circular score gauge into `SecurityScoreGauge.tsx` and tested its radial geometry, thresholds, and score limits using React Testing Library and Jest in a DOM test environment.
+  4. **Unified Regression:** Implemented `run-regression-suite.sh` executing Java Maven tests and JS monorepo tests in parallel, while isolating live E2E tests behind a `--e2e` parameter flag.
