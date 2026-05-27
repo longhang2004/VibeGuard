@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "pnpm --filter \"*\" --parallel dev",
     "build": "pnpm --filter \"*\" build",
-    "test": "pnpm --filter \"*\" test",
+    "test": "pnpm --filter \"!e2e\" test",
+    "test:regression": "./scripts/run-regression-suite.sh",
     "lint": "pnpm --filter \"*\" lint",
     "format": "prettier --write \"**/*.{js,ts,tsx,json,md}\""
   },
