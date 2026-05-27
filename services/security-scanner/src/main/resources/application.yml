@@ -9,10 +9,13 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
   kafka:
     bootstrap-servers: ${SCANNER_KAFKA_BROKERS:localhost:9092}
     consumer:
