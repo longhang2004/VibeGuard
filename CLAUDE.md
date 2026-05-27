@@ -19,6 +19,19 @@
 
 ---
 
+## Core Commands
+
+- **Install monorepo deps:** `pnpm install`
+- **Start all services in parallel (development):** `pnpm dev`
+- **Build all TypeScript services & frontend:** `pnpm build`
+- **Run NestJS unit tests:** `pnpm test`
+- **Run Spring Boot JUnit tests:** `mvn -f services/security-scanner/pom.xml test`
+- **Run E2E integration tests:** `pnpm --filter e2e test`
+- **Build all Docker containers:** `docker compose build`
+- **Spin up production Docker stack:** `docker compose up -d`
+
+---
+
 ## Development Conventions
 
 ### Naming Conventions

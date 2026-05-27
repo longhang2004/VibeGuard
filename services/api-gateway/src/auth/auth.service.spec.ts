@@ -5,28 +5,21 @@ import { JwtService } from '@nestjs/jwt';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { User } from '../users/user.entity';
+import { REDIS_CLIENT } from '../common/providers/redis.provider';
 import * as bcrypt from 'bcrypt';
 
 // Mock bcrypt
 jest.mock('bcrypt');
 
-// Mock Redis client instance
-const mockRedis = {
-  get: jest.fn(),
-  set: jest.fn(),
-};
-
-jest.mock('ioredis', () => {
-  return {
-    default: jest.fn().mockImplementation(() => mockRedis),
-    Redis: jest.fn().mockImplementation(() => mockRedis),
-  };
-});
-
 describe('AuthService', () => {
   let service: AuthService;
   let userRepository: Repository<User>;
   let jwtService: JwtService;
+
+  const mockRedis = {
+    get: jest.fn(),
+    set: jest.fn(),
+  };
 
   const mockUserRepository = {
     findOne: jest.fn(),
@@ -53,15 +46,16 @@ describe('AuthService', () => {
           provide: JwtService,
           useValue: mockJwtService,
         },
+        {
+          provide: REDIS_CLIENT,
+          useValue: mockRedis,
+        },
       ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     jwtService = module.get<JwtService>(JwtService);
-
-    // Inject mock redis client into the service
-    service.setRedisClient(mockRedis as any);
   });
 
   it('should be defined', () => {
@@ -161,6 +155,16 @@ describe('AuthService', () => {
       mockRedis.get.mockResolvedValue('1'); // blacklisted
 
       await expect(service.refresh(refreshDto)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw UnauthorizedException with "Token is blacklisted" message', async () => {
+      const refreshDto = { refreshToken: 'blacklisted_token' };
+      const payload = { sub: 'uuid-123', email: 'test@example.com' };
+
+      mockJwtService.verify.mockReturnValue(payload);
+      mockRedis.get.mockResolvedValue('1');
+
+      await expect(service.refresh(refreshDto)).rejects.toThrow('Token is blacklisted');
     });
 
     it('should throw UnauthorizedException if verification fails', async () => {

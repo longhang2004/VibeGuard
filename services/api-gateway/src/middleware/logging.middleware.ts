@@ -1,5 +1,6 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Request, Response, NextFunction } from 'express';
 import * as winston from 'winston';
 
 @Injectable()
@@ -19,7 +20,7 @@ export class LoggingMiddleware implements NestMiddleware {
     });
   }
 
-  use(req: any, res: any, next: () => void) {
+  use(req: Request, res: Response, next: NextFunction) {
     const start = Date.now();
     const { method, path } = req;
 
@@ -33,7 +34,7 @@ export class LoggingMiddleware implements NestMiddleware {
           secret: process.env.GATEWAY_JWT_SECRET || 'dev_jwt_access_secret_key_vibeguard_12345',
         });
         userId = payload.sub;
-      } catch (err) {
+      } catch {
         // Suppress logger verification errors
       }
     }

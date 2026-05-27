@@ -146,9 +146,21 @@ pnpm dev
 ```
 
 ### Running Tests
-- Test all services: `pnpm test`
-- Test context-service only: `pnpm --filter context-service test`
-- Test java security-scanner: `cd services/security-scanner && mvn test`
+- Run all NestJS unit tests: `pnpm test`
+- Run context-service tests only: `pnpm --filter context-service test`
+- Run java security-scanner tests: `cd services/security-scanner && mvn test`
+- Run E2E integration tests: `pnpm --filter e2e test`
+
+### Running with Docker Compose (Production Build)
+To compile and spin up the complete containerized application stack (including database, brokers, API Gateway, Next.js frontend, and all backend microservices):
+```bash
+# Build the entire cluster
+docker compose build
+
+# Launch the entire system in the background
+docker compose up -d
+```
+All ports remain mapped identically (Gateway on `3000`, Frontend on `4000`).
 
 ---
 

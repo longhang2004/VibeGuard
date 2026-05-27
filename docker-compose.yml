@@ -87,6 +87,138 @@ services:
       - vibeguard-net
     restart: unless-stopped
 
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    container_name: vibeguard-api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - GATEWAY_PORT=3000
+      - GATEWAY_JWT_SECRET=dev_jwt_access_secret_key_vibeguard_12345
+      - GATEWAY_JWT_REFRESH_SECRET=dev_jwt_refresh_secret_key_vibeguard_67890
+      - GATEWAY_JWT_ACCESS_EXPIRATION=15m
+      - GATEWAY_JWT_REFRESH_EXPIRATION=7d
+      - GATEWAY_DATABASE_URL=postgres://postgres:postgrespassword@postgres:5432/vibeguard
+      - GATEWAY_REDIS_HOST=redis
+      - GATEWAY_REDIS_PORT=6379
+      - CONTEXT_SERVICE_URL=http://context-service:3001
+      - SCANNER_SERVICE_URL=http://security-scanner:8080
+      - ANALYTICS_SERVICE_URL=http://analytics-service:3002
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3003
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - vibeguard-net
+    restart: unless-stopped
+
+  context-service:
+    build:
+      context: .
+      dockerfile: services/context-service/Dockerfile
+    container_name: vibeguard-context-service
+    ports:
+      - "3001:3001"
+    environment:
+      - CONTEXT_PORT=3001
+      - CONTEXT_DATABASE_URL=postgres://postgres:postgrespassword@postgres:5432/vibeguard
+      - CONTEXT_REDIS_HOST=redis
+      - CONTEXT_REDIS_PORT=6379
+      - CONTEXT_KAFKA_BROKERS=kafka:29092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - vibeguard-net
+    restart: unless-stopped
+
+  security-scanner:
+    build:
+      context: ./services/security-scanner
+      dockerfile: Dockerfile
+    container_name: vibeguard-security-scanner
+    ports:
+      - "8080:8080"
+    environment:
+      - SCANNER_PORT=8080
+      - SCANNER_DATABASE_URL=jdbc:postgresql://postgres:5432/vibeguard
+      - SCANNER_DATABASE_USERNAME=postgres
+      - SCANNER_DATABASE_PASSWORD=postgrespassword
+      - SCANNER_KAFKA_BROKERS=kafka:29092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - vibeguard-net
+    restart: unless-stopped
+
+  analytics-service:
+    build:
+      context: .
+      dockerfile: services/analytics-service/Dockerfile
+    container_name: vibeguard-analytics-service
+    ports:
+      - "3002:3002"
+    environment:
+      - ANALYTICS_PORT=3002
+      - ANALYTICS_DATABASE_URL=postgres://postgres:postgrespassword@postgres:5432/vibeguard
+      - ANALYTICS_KAFKA_BROKERS=kafka:29092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - vibeguard-net
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+    container_name: vibeguard-notification-service
+    ports:
+      - "3003:3003"
+    environment:
+      - NOTIFICATION_PORT=3003
+      - NOTIFICATION_DATABASE_URL=postgres://postgres:postgrespassword@postgres:5432/vibeguard
+      - NOTIFICATION_KAFKA_BROKERS=kafka:29092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - vibeguard-net
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: vibeguard-frontend
+    ports:
+      - "4000:4000"
+    environment:
+      - FRONTEND_PORT=4000
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+    depends_on:
+      - api-gateway
+    networks:
+      - vibeguard-net
+    restart: unless-stopped
+
 volumes:
   postgres-data:
     driver: local

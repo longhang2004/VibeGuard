@@ -1,55 +1,72 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+import { Request, Response, NextFunction } from 'express';
+import { createProxyMiddleware, RequestHandler } from 'http-proxy-middleware';
+
+interface ProxyRoute {
+  prefix: string;
+  targetEnv: string;
+  defaultTarget: string;
+}
 
 @Injectable()
 export class ProxyMiddleware implements NestMiddleware {
-  constructor(private readonly jwtService: JwtService) {}
+  private proxyCache: Map<string, RequestHandler> = new Map();
 
-  use(req: any, res: any, next: () => void) {
+  private readonly routes: ProxyRoute[] = [
+    {
+      prefix: '/api/context',
+      targetEnv: 'CONTEXT_SERVICE_URL',
+      defaultTarget: 'http://context-service:3001',
+    },
+    {
+      prefix: '/api/scanner',
+      targetEnv: 'SCANNER_SERVICE_URL',
+      defaultTarget: 'http://security-scanner:8080',
+    },
+    {
+      prefix: '/api/analytics',
+      targetEnv: 'ANALYTICS_SERVICE_URL',
+      defaultTarget: 'http://analytics-service:3002',
+    },
+    {
+      prefix: '/api/notifications',
+      targetEnv: 'NOTIFICATION_SERVICE_URL',
+      defaultTarget: 'http://notification-service:3003',
+    },
+  ];
+
+  use(req: Request, res: Response, next: NextFunction) {
     const path = req.path;
 
-    let target = '';
-    let pathRewrite = {};
-
-    if (path.startsWith('/api/context')) {
-      target = process.env.CONTEXT_SERVICE_URL || 'http://localhost:3001';
-      pathRewrite = { '^/api/context': '' }; // E.g., /api/context/templates -> /templates
-    } else if (path.startsWith('/api/scanner')) {
-      target = process.env.SCANNER_SERVICE_URL || 'http://localhost:8080';
-      pathRewrite = { '^/api/scanner': '' }; // E.g., /api/scanner/scan -> /scan
-    } else if (path.startsWith('/api/analytics')) {
-      target = process.env.ANALYTICS_SERVICE_URL || 'http://localhost:3002';
-      pathRewrite = { '^/api': '' }; // E.g., /api/analytics/scans/trend -> /analytics/scans/trend
-    }
-
-    if (!target) {
+    const route = this.routes.find((r) => path.startsWith(r.prefix));
+    if (!route) {
       return next();
     }
 
-    // 1. Optional JWT parsing & User Identification
-    let userId: string | undefined = undefined;
-    const authHeader = req.headers['authorization'];
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      try {
-        const payload = this.jwtService.verify(token, {
-          secret: process.env.GATEWAY_JWT_SECRET || 'dev_jwt_access_secret_key_vibeguard_12345',
-        });
-        userId = payload.sub;
-      } catch (err) {
-        // Suppress invalid token error for proxy route.
-        // Downstream services will enforce authentication if X-User-Id is missing.
-      }
+    const proxy = this.getOrCreateProxy(route);
+    return proxy(req, res, next);
+  }
+
+  private getOrCreateProxy(route: ProxyRoute): RequestHandler {
+    const cached = this.proxyCache.get(route.prefix);
+    if (cached) {
+      return cached;
     }
 
-    // 2. Instantiate and run Proxy Middleware
+    const target = process.env[route.targetEnv] || route.defaultTarget;
+
+    const pathRewrite: Record<string, string> = route.prefix === '/api/context'
+      ? { '^/api/context': '' }
+      : { '^/api': '' };
+
     const proxy = createProxyMiddleware({
       target,
       changeOrigin: true,
       pathRewrite,
       on: {
         proxyReq: (proxyReq: any) => {
+          // X-User-Id is already set by JwtAuthGuard on the original request headers
+          const userId = proxyReq.getHeader('x-user-id');
           if (userId) {
             proxyReq.setHeader('X-User-Id', userId);
           }
@@ -57,6 +74,7 @@ export class ProxyMiddleware implements NestMiddleware {
       },
     });
 
-    return proxy(req, res, next);
+    this.proxyCache.set(route.prefix, proxy);
+    return proxy;
   }
 }
