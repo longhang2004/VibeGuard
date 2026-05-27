@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '../../components/Navbar';
+import SecurityScoreGauge from '../../components/SecurityScoreGauge';
 import { useAuthStore } from '../../store/authStore';
 import { api } from '../../utils/api';
 import Editor from '@monaco-editor/react';
@@ -231,41 +232,7 @@ function ScannerContent() {
             ) : scanResult ? (
               <>
                 {/* Score circular gauge */}
-                <div className="bg-slate-900/30 border border-slate-850 p-6 rounded-3xl backdrop-blur-sm flex items-center space-x-6">
-                  {/* Circular Gauge */}
-                  <div className="relative flex items-center justify-center shrink-0">
-                    <svg height="100" width="100" className="transform -rotate-90">
-                      <circle
-                        stroke="rgb(30, 41, 59)"
-                        fill="transparent"
-                        strokeWidth="8"
-                        r="38"
-                        cx="50"
-                        cy="50"
-                      />
-                      <circle
-                        className={`transition-all duration-1000 ease-out ${
-                          scanResult.score >= 80 ? 'stroke-emerald-500' : scanResult.score >= 50 ? 'stroke-yellow-500' : 'stroke-red-500'
-                        }`}
-                        fill="transparent"
-                        strokeWidth="8"
-                        strokeDasharray={`${2 * Math.PI * 38}`}
-                        strokeDashoffset={`${2 * Math.PI * 38 - (scanResult.score / 100) * 2 * Math.PI * 38}`}
-                        r="38"
-                        cx="50"
-                        cy="50"
-                      />
-                    </svg>
-                    <span className="absolute text-xl font-extrabold text-white">{scanResult.score}</span>
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Scan Safety Score</h4>
-                    <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                      Code scored <span className="font-bold text-white">{scanResult.score}/100</span> based on vulnerability severity deductions.
-                    </p>
-                  </div>
-                </div>
+                <SecurityScoreGauge score={scanResult.score} />
 
                 {/* Findings Panel */}
                 <div className="bg-slate-900/30 border border-slate-850 p-6 rounded-3xl backdrop-blur-sm space-y-4">
