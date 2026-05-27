@@ -8,6 +8,7 @@ import { useAuthStore } from '../../store/authStore';
 import { api } from '../../utils/api';
 import Editor from '@monaco-editor/react';
 import { Shield, FileCode, Play, AlertTriangle, AlertCircle, CheckCircle, ChevronDown, ChevronUp, Copy, HelpCircle } from 'lucide-react';
+import type { ScanResult, Finding, FindingsGrouped, Severity } from '../../types/api';
 
 function ScannerContent() {
   const { accessToken } = useAuthStore();
@@ -20,7 +21,7 @@ function ScannerContent() {
   const [code, setCode] = useState('// Paste your code here to scan for vulnerabilities...\n\nconst password = "hardcoded_secret_token_123456";\n');
   const [loading, setLoading] = useState(false);
   const [pollStatus, setPollStatus] = useState<string | null>(null);
-  const [scanResult, setScanResult] = useState<any | null>(null);
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Collapsed sections for findings
@@ -53,8 +54,9 @@ function ScannerContent() {
         setCode(response.data.data.code);
         setLanguage(response.data.data.language);
       }
-    } catch (e: any) {
-      setError(e.response?.data?.error?.message || 'Failed to load scan');
+    } catch (e: unknown) {
+      const axiosErr = e as { response?: { data?: { error?: { message?: string } } } };
+      setError(axiosErr.response?.data?.error?.message || 'Failed to load scan');
     } finally {
       setLoading(false);
     }
@@ -79,8 +81,9 @@ function ScannerContent() {
       } else {
         throw new Error('No scan ID returned');
       }
-    } catch (e: any) {
-      setError(e.response?.data?.error?.message || 'Failed to submit code for scanning');
+    } catch (e: unknown) {
+      const axiosErr = e as { response?: { data?: { error?: { message?: string } } } };
+      setError(axiosErr.response?.data?.error?.message || 'Failed to submit code for scanning');
       setLoading(false);
       setPollStatus(null);
     }
@@ -126,12 +129,12 @@ function ScannerContent() {
   };
 
   // Group findings by severity
-  const findingsGrouped = scanResult?.findings?.reduce((acc: any, f: any) => {
-    const sev = f.severity.toUpperCase();
+  const findingsGrouped: FindingsGrouped = scanResult?.findings?.reduce((acc: FindingsGrouped, f: Finding) => {
+    const sev = f.severity.toUpperCase() as Severity;
     if (!acc[sev]) acc[sev] = [];
-    acc[sev].push(f);
+    acc[sev]!.push(f);
     return acc;
-  }, {}) || {};
+  }, {} as FindingsGrouped) || {};
 
   const toggleCollapse = (severity: string) => {
     setCollapsed(prev => ({ ...prev, [severity]: !prev[severity] }));
@@ -250,7 +253,7 @@ function ScannerContent() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map((severity) => {
+                      {(['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] as Severity[]).map((severity) => {
                         const list = findingsGrouped[severity] || [];
                         if (list.length === 0) return null;
 
@@ -279,7 +282,7 @@ function ScannerContent() {
                             {/* Collapsible content */}
                             {!isCollapsed && (
                               <div className="p-4 space-y-4 bg-slate-950/20 border-t border-slate-850">
-                                {list.map((finding: any) => (
+                                {list.map((finding: Finding) => (
                                   <div key={finding.id} className="space-y-2 pb-4 border-b border-slate-850/50 last:border-0 last:pb-0">
                                     <div className="flex items-start justify-between text-xs">
                                       <h4 className="font-bold text-white">{finding.title}</h4>

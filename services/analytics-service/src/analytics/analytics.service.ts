@@ -161,6 +161,10 @@ export class AnalyticsService implements OnModuleInit {
 
     const stats = result[0] || { totalScans: 0, avgScore: 0 };
 
+    // NOTE: This query accesses the `findings` and `scans` tables which belong to the
+    // security-scanner service. This works because all services share a single PostgreSQL
+    // database. If services are split into separate databases, this query must be replaced
+    // with a local projection built from Kafka events.
     // Get most common vulnerability from main findings table
     const vulnResult = await this.entityManager.query(
       `SELECT f.title, COUNT(f.title)::int as "vuln_count"
@@ -195,6 +199,7 @@ export class AnalyticsService implements OnModuleInit {
   }
 
   async getPopularTemplates() {
+    // NOTE: Queries `templates` table owned by context-service (shared database assumption).
     const popular = await this.entityManager.query(
       `SELECT t.id, t.name, t.description, t.project_type as "projectType", 
               t.tech_stack as "techStack", t.star_count as "starCount", COUNT(m.id)::int as "starsInPeriod"

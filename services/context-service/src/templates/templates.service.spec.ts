@@ -29,6 +29,13 @@ describe('TemplatesService', () => {
     emit: jest.fn(),
   };
 
+  const mockUpdateQueryBuilder = {
+    update: jest.fn().mockReturnThis(),
+    set: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    execute: jest.fn().mockResolvedValue({ affected: 1 }),
+  };
+
   const mockQueryBuilder = {
     where: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
@@ -48,9 +55,14 @@ describe('TemplatesService', () => {
     save: jest.fn(),
     findOne: jest.fn(),
     find: jest.fn(),
-    findByIds: jest.fn(),
+    findBy: jest.fn(),
     softRemove: jest.fn(),
-    createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+    increment: jest.fn().mockResolvedValue({ affected: 1 }),
+    createQueryBuilder: jest.fn().mockImplementation((alias?: string) => {
+      // When called without alias (for update operations), return update query builder
+      if (!alias) return mockUpdateQueryBuilder;
+      return mockQueryBuilder;
+    }),
   };
 
   const mockVersionRepository = {
@@ -249,9 +261,9 @@ describe('TemplatesService', () => {
       const result = await service.star('template-uuid', 'user-uuid');
 
       expect(result.message).toContain('starred');
-      expect(template.starCount).toBe(6);
       expect(starRepository.create).toHaveBeenCalledWith({ templateId: 'template-uuid', userId: 'user-uuid' });
       expect(starRepository.save).toHaveBeenCalled();
+      expect(mockTemplateRepository.increment).toHaveBeenCalledWith({ id: 'template-uuid' }, 'starCount', 1);
       expect(kafkaClient.emit).toHaveBeenCalledWith('vibeguard.context.template_starred', expect.any(Object));
     });
 
@@ -264,8 +276,9 @@ describe('TemplatesService', () => {
       const result = await service.unstar('template-uuid', 'user-uuid');
 
       expect(result.message).toContain('unstarred');
-      expect(template.starCount).toBe(1);
       expect(starRepository.remove).toHaveBeenCalledWith(star);
+      expect(mockUpdateQueryBuilder.update).toHaveBeenCalled();
+      expect(mockUpdateQueryBuilder.execute).toHaveBeenCalled();
     });
   });
 

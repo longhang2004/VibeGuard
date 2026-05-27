@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, Inject, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ClientKafka } from '@nestjs/microservices';
 import Redis from 'ioredis';
 import * as semver from 'semver';
@@ -176,6 +176,14 @@ export class TemplatesService implements OnModuleInit {
       }
     }
 
+    // Hydrate Date fields from JSON (Redis returns strings)
+    if (template.createdAt && typeof template.createdAt === 'string') {
+      template.createdAt = new Date(template.createdAt);
+    }
+    if (template.updatedAt && typeof template.updatedAt === 'string') {
+      template.updatedAt = new Date(template.updatedAt);
+    }
+
     const { authorId, ...rest } = template;
     return {
       ...rest,
@@ -291,9 +299,8 @@ export class TemplatesService implements OnModuleInit {
       const star = this.starRepository.create({ templateId: id, userId });
       await this.starRepository.save(star);
 
-      // Increment star count
-      template.starCount += 1;
-      await this.templateRepository.save(template);
+      // Atomically increment star count to avoid race conditions
+      await this.templateRepository.increment({ id }, 'starCount', 1);
 
       // Invalidate caches
       await this.redis.del(`template:${id}`);
@@ -324,9 +331,13 @@ export class TemplatesService implements OnModuleInit {
     if (star) {
       await this.starRepository.remove(star);
 
-      // Decrement star count safely
-      template.starCount = Math.max(0, template.starCount - 1);
-      await this.templateRepository.save(template);
+      // Atomically decrement star count safely
+      await this.templateRepository
+        .createQueryBuilder()
+        .update(Template)
+        .set({ starCount: () => 'GREATEST(star_count - 1, 0)' })
+        .where('id = :id', { id })
+        .execute();
 
       // Invalidate caches
       await this.redis.del(`template:${id}`);
@@ -366,7 +377,7 @@ export class TemplatesService implements OnModuleInit {
 
     if (trendingStars.length > 0) {
       const templateIds = trendingStars.map(s => s.templateId);
-      const templates = await this.templateRepository.findByIds(templateIds);
+      const templates = await this.templateRepository.findBy({ id: In(templateIds) });
       
       // Sort templates to match the trending ranking
       trendingTemplates = trendingStars

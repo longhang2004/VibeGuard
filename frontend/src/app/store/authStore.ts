@@ -15,16 +15,31 @@ interface AuthState {
   clearAuth: () => void;
 }
 
+/** Set a simple session cookie readable by Next.js middleware */
+function setSessionCookie(active: boolean) {
+  if (typeof document === 'undefined') return;
+  if (active) {
+    document.cookie = 'vibeguard_session=true; path=/; max-age=604800; SameSite=Lax';
+  } else {
+    document.cookie = 'vibeguard_session=; path=/; max-age=0';
+  }
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
       accessToken: null,
       refreshToken: null,
-      setAuth: (user, accessToken, refreshToken) =>
-        set({ user, accessToken, refreshToken }),
+      setAuth: (user, accessToken, refreshToken) => {
+        setSessionCookie(true);
+        set({ user, accessToken, refreshToken });
+      },
       updateAccessToken: (accessToken) => set({ accessToken }),
-      clearAuth: () => set({ user: null, accessToken: null, refreshToken: null }),
+      clearAuth: () => {
+        setSessionCookie(false);
+        set({ user: null, accessToken: null, refreshToken: null });
+      },
     }),
     {
       name: 'vibeguard-auth',

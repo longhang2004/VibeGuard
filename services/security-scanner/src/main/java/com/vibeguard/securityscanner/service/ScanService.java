@@ -15,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,6 +25,8 @@ import java.util.UUID;
 
 @Service
 public class ScanService {
+
+    private static final Logger log = LoggerFactory.getLogger(ScanService.class);
 
     private final ScanRepository scanRepository;
     private final RuleEngine ruleEngine;
@@ -62,7 +66,7 @@ public class ScanService {
             String payload = objectMapper.writeValueAsString(message);
             kafkaTemplate.send(requestedTopic, scanId.toString(), payload);
         } catch (Exception e) {
-            System.err.println("Failed to publish scan request event: " + e.getMessage());
+            log.error("Failed to publish scan request event: {}", e.getMessage());
             // Update status to FAILED since we couldn't enqueue it
             savedScan.setStatus("FAILED");
             scanRepository.save(savedScan);
@@ -75,7 +79,7 @@ public class ScanService {
     public void executeScan(UUID scanId, String code, String language, String filename) {
         Optional<Scan> scanOpt = scanRepository.findById(scanId);
         if (scanOpt.isEmpty()) {
-            System.err.println("Scan ID " + scanId + " not found in database. Skipping scan.");
+            log.error("Scan ID {} not found in database. Skipping scan.", scanId);
             return;
         }
 
@@ -140,7 +144,7 @@ public class ScanService {
             kafkaTemplate.send(completedTopic, scanId.toString(), payload);
 
         } catch (Exception e) {
-            System.err.println("Error executing scan for ID " + scanId + ": " + e.getMessage());
+            log.error("Error executing scan for ID {}: {}", scanId, e.getMessage());
             scan.setStatus("FAILED");
             scanRepository.save(scan);
         }

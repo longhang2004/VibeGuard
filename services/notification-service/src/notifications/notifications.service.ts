@@ -57,8 +57,9 @@ export class NotificationsService implements OnModuleInit {
       } else {
         console.log('[Notification] Slack webhook URL not configured or invalid, skipping Slack post');
       }
-    } catch (err: any) {
-      console.error('[Notification] Failed to send Slack alert:', err?.message || err);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('[Notification] Failed to send Slack alert:', message);
     }
   }
 
